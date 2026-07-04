@@ -2,7 +2,8 @@
   'use strict';
 
   var CSS_ID = 'book-reader-styles'
-  var STORAGE_KEY = 'book-reader-settings'
+  var SETTINGS_KEY = 'book-reader-settings'
+  var DATA_KEY = 'reader-data-' + (window.location.pathname.split('/').filter(Boolean)[0] || 'home')
 
   var CSS_CONTENT = [
     ':root {',
@@ -187,6 +188,766 @@
     '}'
   ].join('\n')
 
+  var COLORS = ['yellow', 'green', 'blue', 'pink', 'orange', 'purple']
+  var HIGHLIGHT_CLASSES = {
+    yellow: 'hl-yellow',
+    green: 'hl-green',
+    blue: 'hl-blue',
+    pink: 'hl-pink',
+    orange: 'hl-orange',
+    purple: 'hl-purple'
+  }
+
+  /* ============================================================
+     STATE
+     ============================================================ */
+  var currentRange = null
+  var currentText = ''
+  var sidebarOpen = false
+
+  /* ============================================================
+     DATA PERSISTENCE
+     ============================================================ */
+  function loadData() {
+    try {
+      return JSON.parse(localStorage.getItem(DATA_KEY)) || { highlights: [] }
+    } catch (e) {
+      return { highlights: [] }
+    }
+  }
+
+  function saveData(data) {
+    try {
+      localStorage.setItem(DATA_KEY, JSON.stringify(data))
+    } catch (e) {}
+  }
+
+  function genId() {
+    return 'hl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
+  }
+
+  /* ============================================================
+     PARAGRAPH ID ASSIGNMENT
+     ============================================================ */
+  function assignParagraphIds() {
+    var selectors = 'p, h1, h2, h3, h4, h5, h6, li, blockquote, td, th, figcaption'
+    var els = document.querySelectorAll(selectors)
+    var count = 0
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i]
+      if (el.closest('#book-reader-controls') || el.closest('.reader-sidebar') || el.closest('.selection-popup')) continue
+      if (el.textContent.trim().length > 0) {
+        el.dataset.pid = 'p-' + count
+        count++
+      }
+    }
+  }
+
+  function findPidEl(node) {
+    var el = node.nodeType === 3 ? node.parentElement : node
+    while (el && !el.dataset.pid) { el = el.parentElement }
+    return el
+  }
+
+  /* ============================================================
+     RANGE UTILITIES
+     ============================================================ */
+  function wrapRange(range, wrapper) {
+    var fragment = range.extractContents()
+    wrapper.appendChild(fragment)
+    range.insertNode(wrapper)
+    return wrapper
+  }
+
+  function findTextInElement(root, text) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false)
+    var nodes = []
+    while (walker.nextNode()) nodes.push(walker.currentNode)
+
+    var fullText = nodes.map(function (n) { return n.textContent }).join('')
+    var idx = fullText.indexOf(text)
+    if (idx === -1) return null
+
+    var endIdx = idx + text.length
+    var charCount = 0
+    var startNode, startOff, endNode, endOff
+
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i]
+      var len = node.textContent.length
+      var nodeStart = charCount
+      var nodeEnd = charCount + len
+
+      if (!startNode && idx >= nodeStart && idx <= nodeEnd) {
+        if (idx > nodeStart && idx < nodeEnd) {
+          var right = node.splitText(idx - nodeStart)
+          nodes.splice(i + 1, 0, right)
+          startNode = right
+          startOff = 0
+          continue
+        }
+        startNode = node
+        startOff = idx - nodeStart
+      }
+
+      if (!endNode && endIdx >= nodeStart && endIdx <= nodeEnd) {
+        if (endIdx > nodeStart && endIdx < nodeEnd) {
+          var right2 = node.splitText(endIdx - nodeStart)
+          nodes.splice(i + 1, 0, right2)
+          endNode = node
+          endOff = node.textContent.length
+          continue
+        }
+        endNode = node
+        endOff = endIdx - nodeStart
+      }
+
+      charCount += len
+      if (startNode && endNode) break
+    }
+
+    if (!startNode || !endNode) return null
+
+    var range = document.createRange()
+    range.setStart(startNode, startOff)
+    range.setEnd(endNode, endOff)
+    return range
+  }
+
+  /* ============================================================
+     HIGHLIGHT MANAGER
+     ============================================================ */
+  function createHighlight(pid, text, color, note) {
+    return {
+      id: genId(),
+      pid: pid,
+      text: text,
+      color: color,
+      note: note || '',
+      createdAt: Date.now()
+    }
+  }
+
+  function saveHighlight(hl) {
+    var data = loadData()
+    data.highlights.push(hl)
+    saveData(data)
+  }
+
+  function removeHighlight(id) {
+    var data = loadData()
+    data.highlights = data.highlights.filter(function (h) { return h.id !== id })
+    saveData(data)
+  }
+
+  function updateHighlight(id, updates) {
+    var data = loadData()
+    for (var i = 0; i < data.highlights.length; i++) {
+      if (data.highlights[i].id === id) {
+        for (var k in updates) {
+          if (updates.hasOwnProperty(k)) data.highlights[i][k] = updates[k]
+        }
+        break
+      }
+    }
+    saveData(data)
+  }
+
+  function applyHighlightDom(hl) {
+    var el = document.querySelector('[data-pid="' + hl.pid + '"]')
+    if (!el) return false
+
+    var range = findTextInElement(el, hl.text)
+    if (!range) return false
+
+    var span = document.createElement('span')
+    span.className = HIGHLIGHT_CLASSES[hl.color] || 'hl-yellow'
+    span.dataset.hlId = hl.id
+
+    wrapRange(range, span)
+
+    if (hl.note) {
+      addAnnotationRef(span, hl)
+    }
+
+    return true
+  }
+
+  function removeHighlightDom(id) {
+    var span = document.querySelector('[data-hl-id="' + id + '"]')
+    if (!span) return
+
+    var parent = span.parentNode
+    while (span.firstChild) {
+      parent.insertBefore(span.firstChild, span)
+    }
+    parent.removeChild(span)
+
+    var sup = document.querySelector('.annotation-ref[data-hl-id="' + id + '"]')
+    if (sup) sup.parentNode.removeChild(sup)
+
+    renumberAnnotations()
+  }
+
+  function removeHighlightById(id) {
+    removeHighlight(id)
+    removeHighlightDom(id)
+    renderSidebar()
+  }
+
+  function reapplyHighlights() {
+    var data = loadData()
+    data.highlights.sort(function (a, b) { return a.createdAt - b.createdAt })
+    for (var i = 0; i < data.highlights.length; i++) {
+      applyHighlightDom(data.highlights[i])
+    }
+  }
+
+  /* ============================================================
+     ANNOTATIONS
+     ============================================================ */
+  function addAnnotationRef(span, hl) {
+    var sup = document.createElement('sup')
+    sup.className = 'annotation-ref'
+    sup.dataset.hlId = hl.id
+    sup.dataset.note = hl.note
+
+    if (span.nextSibling) {
+      span.parentNode.insertBefore(sup, span.nextSibling)
+    } else {
+      span.parentNode.appendChild(sup)
+    }
+
+    renumberAnnotations()
+  }
+
+  function renumberAnnotations() {
+    var data = loadData()
+    var withNotes = data.highlights.filter(function (h) { return h.note })
+    withNotes.sort(function (a, b) { return a.createdAt - b.createdAt })
+
+    var sups = document.querySelectorAll('.annotation-ref')
+    for (var i = 0; i < sups.length; i++) {
+      var num = 1
+      for (var j = 0; j < withNotes.length; j++) {
+        if (withNotes[j].id === sups[i].dataset.hlId) {
+          num = j + 1
+          break
+        }
+      }
+      sups[i].textContent = num === 1 ? '¹' : num === 2 ? '²' : num === 3 ? '³' : num
+    }
+  }
+
+  function saveAnnotation(hlId, note) {
+    updateHighlight(hlId, { note: note })
+
+    var span = document.querySelector('[data-hl-id="' + hlId + '"]')
+    if (span) {
+      var data = loadData()
+      var hl = null
+      for (var i = 0; i < data.highlights.length; i++) {
+        if (data.highlights[i].id === hlId) { hl = data.highlights[i]; break }
+      }
+      if (hl) addAnnotationRef(span, hl)
+    }
+
+    renderSidebar()
+  }
+
+  function removeAnnotation(hlId) {
+    updateHighlight(hlId, { note: '' })
+    var sup = document.querySelector('.annotation-ref[data-hl-id="' + hlId + '"]')
+    if (sup) sup.parentNode.removeChild(sup)
+    renumberAnnotations()
+    renderSidebar()
+  }
+
+  /* ============================================================
+     SELECTION POPUP
+     ============================================================ */
+  var popupEl = null
+  var popupVisible = false
+
+  function createPopup() {
+    if (popupEl) return
+    popupEl = document.createElement('div')
+    popupEl.className = 'selection-popup'
+
+    for (var i = 0; i < COLORS.length; i++) {
+      var c = COLORS[i]
+      var btn = document.createElement('button')
+      btn.className = 'sp-color-btn sp-' + c
+      btn.title = 'Subrayar en ' + c
+      btn.dataset.color = c
+      btn.addEventListener('click', function (e) {
+        var color = e.currentTarget.dataset.color
+        onColorSelect(color)
+      })
+      popupEl.appendChild(btn)
+    }
+
+    var div = document.createElement('span')
+    div.className = 'sp-divider'
+    popupEl.appendChild(div)
+
+    var annotateBtn = document.createElement('button')
+    annotateBtn.className = 'sp-annotate-btn'
+    annotateBtn.textContent = 'Anotar'
+    annotateBtn.title = 'Subrayar y añadir una nota'
+    annotateBtn.addEventListener('click', function () {
+      showNoteForm()
+    })
+    popupEl.appendChild(annotateBtn)
+
+    document.body.appendChild(popupEl)
+  }
+
+  function showPopup(range, text) {
+    if (!popupEl) createPopup()
+
+    currentRange = range
+    currentText = text
+
+    var rect = range.getBoundingClientRect()
+    if (!rect || (rect.width === 0 && rect.height === 0)) {
+      var sel = window.getSelection()
+      if (sel.rangeCount > 0) rect = sel.getRangeAt(0).getBoundingClientRect()
+    }
+
+    popupEl.classList.remove('note-mode')
+    var noteForm = popupEl.querySelector('.sp-note-form')
+    if (noteForm) popupEl.removeChild(noteForm)
+
+    var cx = rect.left + rect.width / 2
+    var cy = rect.top
+
+    popupEl.style.left = '0px'
+    popupEl.style.top = '0px'
+    popupEl.classList.add('visible')
+    popupVisible = true
+
+    var pw = popupEl.offsetWidth
+    var ph = popupEl.offsetHeight
+
+    var left = Math.max(8, Math.min(cx - pw / 2, window.innerWidth - pw - 8))
+    var top = cy - ph - 10
+
+    if (top < 4) {
+      top = rect.bottom + 10
+    }
+
+    popupEl.style.left = left + 'px'
+    popupEl.style.top = top + 'px'
+  }
+
+  function hidePopup() {
+    if (popupEl) {
+      popupEl.classList.remove('visible')
+      popupVisible = false
+      popupEl.classList.remove('note-mode')
+      var noteForm = popupEl.querySelector('.sp-note-form')
+      if (noteForm) popupEl.removeChild(noteForm)
+    }
+    currentRange = null
+    currentText = ''
+  }
+
+  function showNoteForm() {
+    if (!popupEl) return
+
+    var annotateBtn = popupEl.querySelector('.sp-annotate-btn')
+    if (annotateBtn) annotateBtn.style.display = 'none'
+
+    popupEl.classList.add('note-mode')
+
+    var form = document.createElement('div')
+    form.className = 'sp-note-form'
+
+    var input = document.createElement('input')
+    input.className = 'sp-note-input'
+    input.type = 'text'
+    input.placeholder = 'Escribe tu nota...'
+
+    var saveBtn = document.createElement('button')
+    saveBtn.className = 'sp-note-save'
+    saveBtn.textContent = 'Guardar'
+
+    var cancelBtn = document.createElement('button')
+    cancelBtn.className = 'sp-note-cancel'
+    cancelBtn.textContent = 'Cancelar'
+
+    form.appendChild(input)
+    form.appendChild(saveBtn)
+    form.appendChild(cancelBtn)
+    popupEl.appendChild(form)
+
+    saveBtn.addEventListener('click', function () {
+      var note = input.value.trim()
+      if (note) {
+        onColorSelect(null, note)
+      } else {
+        onColorSelect(null)
+      }
+    })
+
+    cancelBtn.addEventListener('click', function () {
+      hidePopup()
+    })
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') saveBtn.click()
+      if (e.key === 'Escape') hidePopup()
+    })
+
+    setTimeout(function () { input.focus() }, 50)
+  }
+
+  function onColorSelect(color, note) {
+    if (!currentRange) return
+
+    var range = currentRange
+    var text = currentText
+
+    if (!color) {
+      color = 'yellow'
+    }
+
+    var pidEl = findPidEl(range.startContainer)
+    if (!pidEl) {
+      hidePopup()
+      return
+    }
+
+    var pid = pidEl.dataset.pid
+
+    var hl = createHighlight(pid, text, color, note || '')
+
+    var span = document.createElement('span')
+    span.className = HIGHLIGHT_CLASSES[color]
+    span.dataset.hlId = hl.id
+
+    wrapRange(range, span)
+
+    saveHighlight(hl)
+
+    if (hl.note) {
+      addAnnotationRef(span, hl)
+    }
+
+    hidePopup()
+    renderSidebar()
+  }
+
+  /* ============================================================
+     SIDEBAR
+     ============================================================ */
+  var sidebarEl = null
+  var overlayEl = null
+  var toggleBtn = null
+
+  function createSidebar() {
+    if (sidebarEl) return
+
+    toggleBtn = document.createElement('button')
+    toggleBtn.className = 'sidebar-toggle'
+    toggleBtn.innerHTML = '&#9776;'
+    toggleBtn.title = 'Mis notas'
+    toggleBtn.addEventListener('click', toggleSidebar)
+    document.body.appendChild(toggleBtn)
+
+    overlayEl = document.createElement('div')
+    overlayEl.className = 'sidebar-overlay'
+    overlayEl.addEventListener('click', closeSidebar)
+    document.body.appendChild(overlayEl)
+
+    sidebarEl = document.createElement('aside')
+    sidebarEl.className = 'reader-sidebar'
+
+    var header = document.createElement('div')
+    header.className = 'sidebar-header'
+    var title = document.createElement('h3')
+    title.textContent = 'Notas'
+    var closeBtn = document.createElement('button')
+    closeBtn.className = 'sidebar-close'
+    closeBtn.innerHTML = '&#10005;'
+    closeBtn.title = 'Cerrar'
+    closeBtn.addEventListener('click', closeSidebar)
+    header.appendChild(title)
+    header.appendChild(closeBtn)
+    sidebarEl.appendChild(header)
+
+    var body = document.createElement('div')
+    body.className = 'sidebar-body'
+    body.id = 'sidebar-body'
+    sidebarEl.appendChild(body)
+
+    var footer = document.createElement('div')
+    footer.className = 'sidebar-footer'
+    var exportBtn = document.createElement('button')
+    exportBtn.className = 'sidebar-export-btn'
+    exportBtn.innerHTML = '&#8595; Exportar a .md'
+    exportBtn.addEventListener('click', exportMarkdown)
+    footer.appendChild(exportBtn)
+    sidebarEl.appendChild(footer)
+
+    document.body.appendChild(sidebarEl)
+  }
+
+  function toggleSidebar() {
+    if (sidebarOpen) closeSidebar()
+    else openSidebar()
+  }
+
+  function openSidebar() {
+    sidebarOpen = true
+    sidebarEl.classList.add('open')
+    overlayEl.classList.add('visible')
+    renderSidebar()
+  }
+
+  function closeSidebar() {
+    sidebarOpen = false
+    sidebarEl.classList.remove('open')
+    overlayEl.classList.remove('visible')
+  }
+
+  function renderSidebar() {
+    if (!sidebarEl) return
+
+    var data = loadData()
+    var body = document.getElementById('sidebar-body')
+    if (!body) return
+
+    body.innerHTML = ''
+
+    var withNotes = data.highlights.filter(function (h) { return h.note })
+    withNotes.sort(function (a, b) { return a.createdAt - b.createdAt })
+    var plainHls = data.highlights.filter(function (h) { return !h.note })
+    plainHls.sort(function (a, b) { return a.createdAt - b.createdAt })
+
+    if (data.highlights.length === 0) {
+      var empty = document.createElement('div')
+      empty.className = 'sidebar-empty'
+      empty.textContent = 'Selecciona texto para subrayar'
+      body.appendChild(empty)
+      return
+    }
+
+    /* Annotations section */
+    if (withNotes.length > 0) {
+      var annSection = document.createElement('div')
+      annSection.className = 'sidebar-section'
+      var annTitle = document.createElement('div')
+      annTitle.className = 'sidebar-section-title'
+      annTitle.textContent = 'Anotaciones (' + withNotes.length + ')'
+      annSection.appendChild(annTitle)
+
+      for (var i = 0; i < withNotes.length; i++) {
+        var hl = withNotes[i]
+        var item = document.createElement('div')
+        item.className = 'sidebar-item'
+        item.style.borderLeftColor = getColorHex(hl.color)
+        item.addEventListener('click', function (id) {
+          return function () { scrollToHighlight(id) }
+        }(hl.id))
+
+        var ref = document.createElement('span')
+        ref.className = 'sidebar-ref-badge'
+        ref.textContent = (i + 1) + '.'
+        item.appendChild(ref)
+
+        var textEl = document.createElement('div')
+        textEl.className = 'sidebar-highlight-text'
+        textEl.textContent = hl.text
+        item.appendChild(textEl)
+
+        var noteEl = document.createElement('div')
+        noteEl.className = 'sidebar-note-preview'
+        noteEl.textContent = hl.note
+        item.appendChild(noteEl)
+
+        annSection.appendChild(item)
+      }
+      body.appendChild(annSection)
+    }
+
+    /* Highlights section */
+    if (plainHls.length > 0) {
+      var hlSection = document.createElement('div')
+      hlSection.className = 'sidebar-section'
+      var hlTitle = document.createElement('div')
+      hlTitle.className = 'sidebar-section-title'
+      hlTitle.textContent = 'Subrayados (' + plainHls.length + ')'
+      hlSection.appendChild(hlTitle)
+
+      for (var j = 0; j < plainHls.length; j++) {
+        var hl2 = plainHls[j]
+        var item2 = document.createElement('div')
+        item2.className = 'sidebar-item'
+        item2.style.borderLeftColor = getColorHex(hl2.color)
+        item2.addEventListener('click', function (id) {
+          return function () { scrollToHighlight(id) }
+        }(hl2.id))
+
+        var textEl2 = document.createElement('div')
+        textEl2.className = 'sidebar-highlight-text'
+        textEl2.textContent = hl2.text
+        item2.appendChild(textEl2)
+
+        hlSection.appendChild(item2)
+      }
+      body.appendChild(hlSection)
+    }
+
+    /* Group by color for visual grouping */
+    var colorGroups = {}
+    for (var k = 0; k < data.highlights.length; k++) {
+      var h = data.highlights[k]
+      if (!colorGroups[h.color]) colorGroups[h.color] = []
+      colorGroups[h.color].push(h)
+    }
+
+    var colorOrder = ['yellow', 'green', 'blue', 'pink', 'orange', 'purple']
+    for (var ci = 0; ci < colorOrder.length; ci++) {
+      var grp = colorGroups[colorOrder[ci]]
+      if (!grp || grp.length === 0) continue
+    }
+  }
+
+  function scrollToHighlight(id) {
+    var el = document.querySelector('[data-hl-id="' + id + '"]')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.style.transition = 'outline 0.3s ease'
+      el.style.outline = '2px solid rgba(255,255,255,0.4)'
+      el.style.outlineOffset = '2px'
+      setTimeout(function () {
+        el.style.outline = 'none'
+      }, 2000)
+    }
+    closeSidebar()
+  }
+
+  function getColorHex(color) {
+    var map = {
+      yellow: '#ffd500',
+      green: '#4caf50',
+      blue: '#2196f3',
+      pink: '#e91e63',
+      orange: '#ff9800',
+      purple: '#9c27b0'
+    }
+    return map[color] || '#ffd500'
+  }
+
+  /* ============================================================
+     EXPORT TO MARKDOWN
+     ============================================================ */
+  function exportMarkdown() {
+    var data = loadData()
+    if (data.highlights.length === 0) return
+
+    var bookTitle = ''
+    var h1 = document.querySelector('h1')
+    if (h1) bookTitle = h1.textContent.trim()
+
+    var lines = []
+    if (bookTitle) lines.push('# ' + bookTitle)
+    else lines.push('# Notas de lectura')
+    lines.push('')
+
+    var withNotes = data.highlights.filter(function (h) { return h.note })
+    withNotes.sort(function (a, b) { return a.createdAt - b.createdAt })
+    var plainHls = data.highlights.filter(function (h) { return !h.note })
+
+    if (withNotes.length > 0) {
+      lines.push('## Anotaciones')
+      lines.push('')
+      for (var i = 0; i < withNotes.length; i++) {
+        var h = withNotes[i]
+        lines.push((i + 1) + '. **' + h.text + '**')
+        lines.push('   > *' + h.note + '*')
+        lines.push('')
+      }
+    }
+
+    if (plainHls.length > 0) {
+      lines.push('## Subrayados')
+      lines.push('')
+      for (var j = 0; j < plainHls.length; j++) {
+        var h2 = plainHls[j]
+        lines.push('- ' + h2.text)
+        lines.push('')
+      }
+    }
+
+    var md = lines.join('\n')
+    var blob = new Blob([md], { type: 'text/markdown;charset=utf-8' })
+    var url = URL.createObjectURL(blob)
+    var a = document.createElement('a')
+    a.href = url
+    a.download = (bookTitle ? bookTitle.replace(/[^a-zA-Z0-9\u00C0-\u024f\s]/g, '').trim() : 'notas') + '.md'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  /* ============================================================
+     EVENT LISTENERS
+     ============================================================ */
+  function onMouseUp(e) {
+    if (e.target.closest('.selection-popup') ||
+        e.target.closest('.reader-sidebar') ||
+        e.target.closest('.sidebar-overlay') ||
+        e.target.closest('.sidebar-toggle')) return
+
+    setTimeout(function () {
+      var sel = window.getSelection()
+      var text = sel.toString().trim()
+      if (!text || text.length > 500) {
+        hidePopup()
+        return
+      }
+
+      if (sel.rangeCount === 0) {
+        hidePopup()
+        return
+      }
+
+      var range = sel.getRangeAt(0)
+      var startPid = findPidEl(range.startContainer)
+      var endPid = findPidEl(range.endContainer)
+
+      if (!startPid || startPid !== endPid) {
+        hidePopup()
+        return
+      }
+
+      showPopup(range, text)
+    }, 10)
+  }
+
+  function onKeyDown(e) {
+    if (e.key === 'Escape') {
+      if (popupVisible) hidePopup()
+      if (sidebarOpen) closeSidebar()
+    }
+  }
+
+  function onClickOutside(e) {
+    if (popupVisible && popupEl && !popupEl.contains(e.target)) {
+      var sel = window.getSelection()
+      if (!sel.toString().trim()) {
+        hidePopup()
+      }
+    }
+  }
+
+  /* ============================================================
+     EXISTING FUNCTIONALITY (theme, font size, controls)
+     ============================================================ */
   function injectCSS() {
     if (document.getElementById(CSS_ID)) return
     var style = document.createElement('style')
@@ -204,7 +965,7 @@
     ps.position = 'fixed'
     ps.top = '12px'
     ps.right = '12px'
-    ps.zIndex = '9999'
+    ps.zIndex = '9996'
     ps.display = 'flex'
     ps.gap = '6px'
     ps.alignItems = 'center'
@@ -335,7 +1096,7 @@
 
   function loadSettings() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { theme: 'sepia', fontSize: 18 }
+      return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || { theme: 'sepia', fontSize: 18 }
     } catch (e) {
       return { theme: 'sepia', fontSize: 18 }
     }
@@ -343,7 +1104,7 @@
 
   function saveSettings(settings) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
     } catch (e) {}
   }
 
@@ -357,10 +1118,20 @@
     }
   }
 
+  /* ============================================================
+     INIT
+     ============================================================ */
   function init() {
     injectCSS()
     applySettings()
     createControls()
+    assignParagraphIds()
+    reapplyHighlights()
+    createSidebar()
+
+    document.addEventListener('mouseup', onMouseUp)
+    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('mousedown', onClickOutside)
   }
 
   if (document.readyState === 'loading') {
