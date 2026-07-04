@@ -361,7 +361,7 @@
     if (!range) return false
 
     var span = document.createElement('span')
-    span.className = HIGHLIGHT_CLASSES[hl.color] || 'hl-yellow'
+    span.className = hl.note ? 'hl-has-note' : (HIGHLIGHT_CLASSES[hl.color] || 'hl-yellow')
     span.dataset.hlId = hl.id
 
     wrapRange(range, span)
@@ -392,6 +392,28 @@
   function removeHighlightById(id) {
     removeHighlight(id)
     removeHighlightDom(id)
+    renderSidebar()
+  }
+
+  function removeAnnotation(hlId) {
+    updateHighlight(hlId, { note: '' })
+
+    var sup = document.querySelector('.annotation-ref[data-hl-id="' + hlId + '"]')
+    if (sup) sup.parentNode.removeChild(sup)
+
+    var span = document.querySelector('[data-hl-id="' + hlId + '"]')
+    if (span) {
+      var data = loadData()
+      var hl = null
+      for (var i = 0; i < data.highlights.length; i++) {
+        if (data.highlights[i].id === hlId) { hl = data.highlights[i]; break }
+      }
+      if (hl) {
+        span.className = HIGHLIGHT_CLASSES[hl.color] || 'hl-yellow'
+      }
+    }
+
+    renumberAnnotations()
     renderSidebar()
   }
 
@@ -624,7 +646,7 @@
     var hl = createHighlight(pid, text, color, note || '')
 
     var span = document.createElement('span')
-    span.className = HIGHLIGHT_CLASSES[color]
+    span.className = note ? 'hl-has-note' : (HIGHLIGHT_CLASSES[color])
     span.dataset.hlId = hl.id
 
     wrapRange(range, span)
@@ -748,24 +770,37 @@
         var item = document.createElement('div')
         item.className = 'sidebar-item'
         item.style.borderLeftColor = getColorHex(hl.color)
-        item.addEventListener('click', function (id) {
+
+        var delBtn = document.createElement('button')
+        delBtn.className = 'sidebar-delete-btn'
+        delBtn.innerHTML = '&#10005;'
+        delBtn.title = 'Eliminar nota'
+        delBtn.addEventListener('click', function (e, id) {
+          return function (ev) { ev.stopPropagation(); removeAnnotation(id) }
+        }(hl.id))
+        item.appendChild(delBtn)
+
+        var clickArea = document.createElement('div')
+        clickArea.style.cssText = 'flex:1;cursor:pointer'
+        clickArea.addEventListener('click', function (id) {
           return function () { scrollToHighlight(id) }
         }(hl.id))
+        item.appendChild(clickArea)
 
         var ref = document.createElement('span')
         ref.className = 'sidebar-ref-badge'
         ref.textContent = (i + 1) + '.'
-        item.appendChild(ref)
+        clickArea.appendChild(ref)
 
         var textEl = document.createElement('div')
         textEl.className = 'sidebar-highlight-text'
         textEl.textContent = hl.text
-        item.appendChild(textEl)
+        clickArea.appendChild(textEl)
 
         var noteEl = document.createElement('div')
         noteEl.className = 'sidebar-note-preview'
         noteEl.textContent = hl.note
-        item.appendChild(noteEl)
+        clickArea.appendChild(noteEl)
 
         annSection.appendChild(item)
       }
@@ -786,14 +821,27 @@
         var item2 = document.createElement('div')
         item2.className = 'sidebar-item'
         item2.style.borderLeftColor = getColorHex(hl2.color)
-        item2.addEventListener('click', function (id) {
+
+        var delBtn2 = document.createElement('button')
+        delBtn2.className = 'sidebar-delete-btn'
+        delBtn2.innerHTML = '&#10005;'
+        delBtn2.title = 'Eliminar subrayado'
+        delBtn2.addEventListener('click', function (e, id) {
+          return function (ev) { ev.stopPropagation(); removeHighlightById(id) }
+        }(hl2.id))
+        item2.appendChild(delBtn2)
+
+        var clickArea2 = document.createElement('div')
+        clickArea2.style.cssText = 'flex:1;cursor:pointer'
+        clickArea2.addEventListener('click', function (id) {
           return function () { scrollToHighlight(id) }
         }(hl2.id))
+        item2.appendChild(clickArea2)
 
         var textEl2 = document.createElement('div')
         textEl2.className = 'sidebar-highlight-text'
         textEl2.textContent = hl2.text
-        item2.appendChild(textEl2)
+        clickArea2.appendChild(textEl2)
 
         hlSection.appendChild(item2)
       }
