@@ -477,14 +477,6 @@
     renderSidebar()
   }
 
-  function removeAnnotation(hlId) {
-    updateHighlight(hlId, { note: '' })
-    var sup = document.querySelector('.annotation-ref[data-hl-id="' + hlId + '"]')
-    if (sup) sup.parentNode.removeChild(sup)
-    renumberAnnotations()
-    renderSidebar()
-  }
-
   /* ============================================================
      SELECTION POPUP
      ============================================================ */
