@@ -767,7 +767,7 @@
         delBtn.className = 'sidebar-delete-btn'
         delBtn.innerHTML = '&#10005;'
         delBtn.title = 'Eliminar nota'
-        delBtn.addEventListener('click', function (e, id) {
+        delBtn.addEventListener('click', function (id) {
           return function (ev) { ev.stopPropagation(); removeAnnotation(id) }
         }(hl.id))
         item.appendChild(delBtn)
@@ -818,7 +818,7 @@
         delBtn2.className = 'sidebar-delete-btn'
         delBtn2.innerHTML = '&#10005;'
         delBtn2.title = 'Eliminar subrayado'
-        delBtn2.addEventListener('click', function (e, id) {
+        delBtn2.addEventListener('click', function (id) {
           return function (ev) { ev.stopPropagation(); removeHighlightById(id) }
         }(hl2.id))
         item2.appendChild(delBtn2)
