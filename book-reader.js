@@ -256,7 +256,18 @@
     var fragment = range.extractContents()
     wrapper.appendChild(fragment)
     range.insertNode(wrapper)
+    cleanupEmptyElements(wrapper.parentNode)
     return wrapper
+  }
+
+  function cleanupEmptyElements(root) {
+    var els = root.querySelectorAll('*')
+    for (var i = els.length - 1; i >= 0; i--) {
+      var el = els[i]
+      if (el.nodeType === 1 && !el.textContent.trim() && !el.dataset.hlId && el.tagName !== 'BODY' && el.tagName !== 'HTML') {
+        el.parentNode.removeChild(el)
+      }
+    }
   }
 
   function findTextInElement(root, text) {
@@ -377,11 +388,11 @@
     var span = document.querySelector('[data-hl-id="' + id + '"]')
     if (!span) return
 
+    var text = span.textContent
     var parent = span.parentNode
-    while (span.firstChild) {
-      parent.insertBefore(span.firstChild, span)
-    }
-    parent.removeChild(span)
+    var textNode = document.createTextNode(text)
+    parent.replaceChild(textNode, span)
+    parent.normalize()
 
     var sup = document.querySelector('.annotation-ref[data-hl-id="' + id + '"]')
     if (sup) sup.parentNode.removeChild(sup)
@@ -562,6 +573,8 @@
       popupEl.classList.remove('note-mode')
       var noteForm = popupEl.querySelector('.sp-note-form')
       if (noteForm) popupEl.removeChild(noteForm)
+      var annotateBtn = popupEl.querySelector('.sp-annotate-btn')
+      if (annotateBtn) annotateBtn.style.display = ''
     }
     currentRange = null
     currentText = ''
