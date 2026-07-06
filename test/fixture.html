@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lector — fixture de prueba</title>
+  <link rel="stylesheet" href="../book-reader.css">
+  <script src="../book-reader.js"></script>
+</head>
+<body>
+  <h1>Fixture de prueba del lector</h1>
+
+  <p>Primer párrafo normal. Selecciona una palabra aquí para subrayar en un solo color.</p>
+
+  <h2>Prueba: salto de línea y cursiva vacía</h2>
+  <p>
+    Línea con un salto<br>
+    de línea manual y una cursiva <i></i> vacía que NO debe desaparecer al subrayar.
+  </p>
+
+  <h2>Prueba: cursiva con contenido</h2>
+  <p>
+    Texto con una palabra en <i>cursiva</i> y otra en <b>negrita</b>. Subraya solo la parte
+    en cursiva y comprueba que al borrar el subrayado la cursiva sigue intacta.
+  </p>
+
+  <h2>Prueba: subrayado entre párrafos</h2>
+  <p>Inicio de una selección que continúa en el siguiente párrafo...</p>
+  <p>...y termina aquí. Selecciona desde el párrafo anterior hasta este y subraya: deben quedar marcados ambos.</p>
+
+  <h2>Prueba: párrafos duplicados</h2>
+  <p>La misma frase aparece dos veces.</p>
+  <p>La misma frase aparece dos veces.</p>
+  <p>Subraya la segunda ocurrencia: al recargar debe restaurarse sobre la segunda, no sobre la primera (gracias a los offsets).</p>
+
+  <h2>Prueba: anotación</h2>
+  <p>Selecciona aquí y pulsa "Anotar" para añadir una nota. Debe aparecer un superíndice numerado con tooltip al pasar el ratón.</p>
+
+  <h2>Prueba: imagen con descripción OCR (debe ocultarse)</h2>
+  <img alt="Cuadrado con rayo." src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='80' height='80' fill='%23ccc'/></svg>">
+  <div class="img-description">
+    <p>Descripción larga generada por el OCR que no debe verse.</p>
+    <div class="img-alt">Cuadrado con rayo.</div>
+  </div>
+
+  <p>Párrafo final para probar el scroll del sidebar al hacer clic en un subrayado.</p>
+
+  <hr>
+  <p><small>Instrucciones: prueba temas (S/W/D arriba derecha), tamaño de fuente (A−/A+), subrayados de 6 colores,
+  anotaciones, el sidebar (botón ☰ arriba izquierda o tecla <b>n</b>), exportar a .md, y recarga la página para
+  verificar la persistencia y restauración de los subrayados.</small></p>
+</body>
+</html>

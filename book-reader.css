@@ -1,3 +1,8 @@
+/* book-reader.css — estilos del lector universal para HTML de libros (salida OCR) */
+
+/* ============================================================
+   1. TOKENS DE TEMA
+   ============================================================ */
 :root {
   --bg: #f4ecd8;
   --text: #3b3a36;
@@ -7,45 +12,51 @@
   --border: #d4c9a8;
   --heading: #2c2b27;
   --accent: #c4a97d;
+
+  --c-yellow: rgba(255, 213, 0, 0.35);
+  --c-green:  rgba(76, 175, 80, 0.30);
+  --c-blue:   rgba(33, 150, 243, 0.30);
+  --c-pink:   rgba(233, 30, 99, 0.30);
+  --c-orange: rgba(255, 152, 0, 0.30);
+  --c-purple: rgba(156, 39, 176, 0.30);
+
+  --ui-bg: rgba(0, 0, 0, 0.75);
+  --ui-fg: #fff;
+  --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .theme-white {
-  --bg: #ffffff;
-  --text: #333333;
-  --text-muted: #666666;
-  --link: #1a6dd4;
-  --link-hover: #1558b0;
-  --border: #dddddd;
-  --heading: #222222;
-  --accent: #999999;
+  --bg: #ffffff; --text: #333333; --text-muted: #666666;
+  --link: #1a6dd4; --link-hover: #1558b0; --border: #dddddd;
+  --heading: #222222; --accent: #999999;
 }
 
 .theme-dark {
-  --bg: #1a1a1a;
-  --text: #d1d1d1;
-  --text-muted: #999999;
-  --link: #6ba3e0;
-  --link-hover: #8bb9f0;
-  --border: #333333;
-  --heading: #e8e8e8;
-  --accent: #555555;
+  --bg: #1a1a1a; --text: #d1d1d1; --text-muted: #999999;
+  --link: #6ba3e0; --link-hover: #8bb9f0; --border: #333333;
+  --heading: #e8e8e8; --accent: #555555;
+  --c-yellow: rgba(255, 213, 0, 0.45);
+  --c-green:  rgba(76, 175, 80, 0.40);
+  --c-blue:   rgba(33, 150, 243, 0.40);
+  --c-pink:   rgba(233, 30, 99, 0.40);
+  --c-orange: rgba(255, 152, 0, 0.40);
+  --c-purple: rgba(156, 39, 176, 0.40);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* ============================================================
+   2. TIPOGRAFÍA BASE
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-family: Georgia, "Times New Roman", Times, serif;
   font-size: 18px;
   line-height: 1.8;
   color: var(--text);
   background-color: var(--bg);
   max-width: 720px;
   margin: 0 auto;
-  padding: 40px 30px 80px;
+  padding: 40px 30px 90px;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -53,106 +64,35 @@ h1, h2, h3 {
   color: var(--heading);
   font-weight: 600;
   line-height: 1.3;
-  margin-top: 2em;
-  margin-bottom: 0.75em;
+  margin: 2em 0 0.75em;
 }
 
-h1 {
-  font-size: 2em;
-  text-align: center;
-  margin-top: 1.5em;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
+h1 { font-size: 2em; text-align: center; margin-top: 1.5em; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.5em; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+h3 { font-size: 1.2em; }
 
-h2 {
-  font-size: 1.5em;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.3em;
-}
+p { margin-bottom: 0.5em; text-align: justify; text-indent: 1.5em; orphans: 3; widows: 3; }
+h1 + p, h2 + p, h3 + p { text-indent: 0; }
 
-h3 {
-  font-size: 1.2em;
-  font-weight: 600;
-}
+img { max-width: 100%; height: auto; display: block; margin: 1.5em auto; border-radius: 2px; }
 
-p {
-  margin-bottom: 0.5em;
-  text-align: justify;
-  text-indent: 1.5em;
-  orphans: 3;
-  widows: 3;
-}
+a { color: var(--link); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+a:hover { border-bottom-color: var(--link); color: var(--link-hover); }
 
-h1 + p, h2 + p, h3 + p {
-  text-indent: 0;
-}
+ul, ol { margin: 1em 0 1em 2em; }
+li { margin-bottom: 0.3em; }
 
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 1.5em auto;
-  border-radius: 2px;
-}
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.95em; }
+th, td { padding: 0.5em 0.8em; text-align: left; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
 
-div.img-description,
-div.img-alt,
-.img-description,
-.img-alt {
-  display: none !important;
-}
-
-a {
-  color: var(--link);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.2s;
-}
-
-a:hover {
-  border-bottom-color: var(--link);
-  color: var(--link-hover);
-}
-
-ul, ol {
-  margin: 1em 0 1em 2em;
-}
-
-li {
-  margin-bottom: 0.3em;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1.5em 0;
-  font-size: 0.95em;
-}
-
-th, td {
-  padding: 0.5em 0.8em;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-
-tr:last-child td {
-  border-bottom: none;
-}
-
-b, strong {
-  font-weight: 600;
-  color: var(--heading);
-}
-
-i, em {
-  font-style: italic;
-}
+b, strong { font-weight: 600; color: var(--heading); }
+i, em { font-style: italic; }
 
 pre {
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-family: Consolas, Monaco, "Courier New", monospace;
   font-size: 0.85em;
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.05);
   padding: 1em;
   border-radius: 4px;
   overflow-x: auto;
@@ -160,42 +100,139 @@ pre {
   line-height: 1.5;
 }
 
-sup {
-  font-size: 0.75em;
-  vertical-align: super;
-  line-height: 0;
+sup { font-size: 0.75em; vertical-align: super; line-height: 0; }
+
+/* ============================================================
+   3. LIMPIEZA DE SALIDA OCR
+   ============================================================ */
+div.img-description,
+div.img-alt,
+.img-description,
+.img-alt {
+  display: none !important;
 }
 
-/* =============================================
-   HIGHLIGHT COLORS
-   ============================================= */
-.hl-yellow  { background: rgba(255, 213, 0, 0.35); border-radius: 2px; }
-.hl-green   { background: rgba(76, 175, 80, 0.30); border-radius: 2px; }
-.hl-blue    { background: rgba(33, 150, 243, 0.30); border-radius: 2px; }
-.hl-pink    { background: rgba(233, 30, 99, 0.30);  border-radius: 2px; }
-.hl-orange  { background: rgba(255, 152, 0, 0.30);  border-radius: 2px; }
-.hl-purple  { background: rgba(156, 39, 176, 0.30); border-radius: 2px; }
+/* ============================================================
+   4. CONTROLES FLOTANTES (temas + tamaño de fuente)
+   ============================================================ */
+#book-reader-controls {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 9996;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--ui-bg);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--ui-fg);
+  font-family: var(--ui-font);
+  font-size: 13px;
+  opacity: 0.25;
+  transition: opacity 0.3s ease;
+  user-select: none;
+}
 
-.theme-dark .hl-yellow  { background: rgba(255, 213, 0, 0.45); }
-.theme-dark .hl-green   { background: rgba(76, 175, 80, 0.40); }
-.theme-dark .hl-blue    { background: rgba(33, 150, 243, 0.40); }
-.theme-dark .hl-pink    { background: rgba(233, 30, 99, 0.40);  }
-.theme-dark .hl-orange  { background: rgba(255, 152, 0, 0.40);  }
-.theme-dark .hl-purple  { background: rgba(156, 39, 176, 0.40); }
+#book-reader-controls:hover { opacity: 1; }
 
-.hl-has-note {
+#book-reader-controls .br-sep {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 0 2px;
+}
+
+#book-reader-controls button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  font-family: var(--ui-font);
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  color: #fff;
+  transition: transform 0.2s, border-color 0.2s, background 0.2s;
+}
+
+#book-reader-controls .br-theme[data-theme="sepia"] { background: #f4ecd8; color: #3b3a36; }
+#book-reader-controls .br-theme[data-theme="white"] { background: #fff;    color: #333; }
+#book-reader-controls .br-theme[data-theme="dark"]  { background: #1a1a1a; color: #d1d1d1; }
+#book-reader-controls .br-theme[aria-pressed="true"] { border-color: #fff; transform: scale(1.15); }
+
+#book-reader-controls .br-font {
+  border-radius: 6px;
+  width: auto;
+  padding: 2px 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+#book-reader-controls .br-font:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ============================================================
+   5. BOTÓN DEL SIDEBAR (arriba-izquierda)
+   ============================================================ */
+.sidebar-toggle {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 9998;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.35;
+  transition: opacity 0.3s, background 0.2s;
+  user-select: none;
+}
+
+.sidebar-toggle:hover { opacity: 1; background: rgba(0, 0, 0, 0.85); }
+
+/* ============================================================
+   6. SUBRAYADOS
+   ============================================================ */
+.hl { border-radius: 2px; }
+.hl[data-color="yellow"] { background: var(--c-yellow); }
+.hl[data-color="green"]  { background: var(--c-green); }
+.hl[data-color="blue"]   { background: var(--c-blue); }
+.hl[data-color="pink"]   { background: var(--c-pink); }
+.hl[data-color="orange"] { background: var(--c-orange); }
+.hl[data-color="purple"] { background: var(--c-purple); }
+
+.hl.is-note {
   background: none !important;
   border-bottom: 1.5px dotted var(--link);
   cursor: help;
 }
 
-.theme-dark .hl-has-note {
-  border-bottom-color: var(--link);
+.hl-flash {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+  transition: outline 0.3s ease;
 }
 
-/* =============================================
-   SELECTION POPUP
-   ============================================= */
+/* ============================================================
+   7. POPUP DE SELECCIÓN
+   ============================================================ */
 .selection-popup {
   position: fixed;
   z-index: 10000;
@@ -203,103 +240,74 @@ sup {
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: rgba(30,30,30,0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  background: rgba(30, 30, 30, 0.92);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   opacity: 0;
   transform: translateY(6px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity 0.15s, transform 0.15s;
   pointer-events: none;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--ui-font);
 }
 
-.selection-popup.visible {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
+.selection-popup.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+.selection-popup.note-mode .sp-color-btn,
+.selection-popup.note-mode .sp-divider,
+.selection-popup.note-mode .sp-annotate-btn { display: none; }
 
 .sp-color-btn {
-  width: 24px;
-  height: 24px;
+  width: 24px; height: 24px;
   border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.4);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  transition: all 0.15s ease;
   padding: 0;
   flex-shrink: 0;
+  transition: transform 0.15s, border-color 0.15s;
 }
+.sp-color-btn:hover { transform: scale(1.2); border-color: #fff; }
+.sp-color-btn[data-color="yellow"] { background: #ffd500; }
+.sp-color-btn[data-color="green"]  { background: #4caf50; }
+.sp-color-btn[data-color="blue"]   { background: #2196f3; }
+.sp-color-btn[data-color="pink"]   { background: #e91e63; }
+.sp-color-btn[data-color="orange"] { background: #ff9800; }
+.sp-color-btn[data-color="purple"] { background: #9c27b0; }
 
-.sp-color-btn:hover {
-  transform: scale(1.2);
-  border-color: #fff;
-}
-
-.sp-color-btn.sp-yellow  { background: #ffd500; }
-.sp-color-btn.sp-green   { background: #4caf50; }
-.sp-color-btn.sp-blue    { background: #2196f3; }
-.sp-color-btn.sp-pink    { background: #e91e63; }
-.sp-color-btn.sp-orange  { background: #ff9800; }
-.sp-color-btn.sp-purple  { background: #9c27b0; }
-
-.sp-divider {
-  width: 1px;
-  height: 20px;
-  background: rgba(255,255,255,0.2);
-  margin: 0 2px;
-  flex-shrink: 0;
-}
+.sp-divider { width: 1px; height: 20px; background: rgba(255, 255, 255, 0.2); margin: 0 2px; flex-shrink: 0; }
 
 .sp-annotate-btn {
   border: none;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
   font-size: 12px;
   font-weight: 500;
   padding: 4px 10px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s;
   white-space: nowrap;
   flex-shrink: 0;
   font-family: inherit;
 }
+.sp-annotate-btn:hover { background: rgba(255, 255, 255, 0.2); }
 
-.sp-annotate-btn:hover {
-  background: rgba(255,255,255,0.2);
-}
-
-/* Annotation input inside popup */
-.sp-note-form {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
+.sp-note-form { display: flex; align-items: center; gap: 6px; }
 .sp-note-input {
-  border: 1px solid rgba(255,255,255,0.25);
-  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
   font-size: 13px;
   padding: 4px 8px;
   border-radius: 6px;
   outline: none;
-  width: 200px;
+  width: 220px;
   font-family: inherit;
 }
+.sp-note-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+.sp-note-input:focus { border-color: rgba(255, 255, 255, 0.5); }
 
-.sp-note-input::placeholder {
-  color: rgba(255,255,255,0.4);
-}
-
-.sp-note-input:focus {
-  border-color: rgba(255,255,255,0.5);
-}
-
-.sp-note-save,
-.sp-note-cancel {
+.sp-note-save, .sp-note-cancel {
   border: none;
   padding: 4px 8px;
   border-radius: 6px;
@@ -308,28 +316,14 @@ sup {
   font-weight: 500;
   font-family: inherit;
 }
+.sp-note-save { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.sp-note-save:hover { background: rgba(255, 255, 255, 0.3); }
+.sp-note-cancel { background: transparent; color: rgba(255, 255, 255, 0.5); }
+.sp-note-cancel:hover { color: #fff; }
 
-.sp-note-save {
-  background: rgba(255,255,255,0.2);
-  color: #fff;
-}
-
-.sp-note-save:hover {
-  background: rgba(255,255,255,0.3);
-}
-
-.sp-note-cancel {
-  background: transparent;
-  color: rgba(255,255,255,0.5);
-}
-
-.sp-note-cancel:hover {
-  color: #fff;
-}
-
-/* =============================================
-   ANNOTATION REFERENCES
-   ============================================= */
+/* ============================================================
+   8. REFERENCIAS DE ANOTACIÓN
+   ============================================================ */
 .annotation-ref {
   position: relative;
   cursor: pointer;
@@ -338,15 +332,12 @@ sup {
   font-weight: 600;
   font-style: normal;
   text-decoration: none;
-  transition: color 0.15s;
   display: inline-block;
   line-height: 1;
   user-select: none;
+  transition: color 0.15s;
 }
-
-.annotation-ref:hover {
-  color: var(--link-hover);
-}
+.annotation-ref:hover { color: var(--link-hover); }
 
 .annotation-ref::after {
   content: attr(data-note);
@@ -354,9 +345,9 @@ sup {
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(20,20,20,0.95);
-  backdrop-filter: blur(8px);
+  background: rgba(20, 20, 20, 0.95);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   color: #f0f0f0;
   font-size: 13px;
   font-weight: 400;
@@ -368,11 +359,10 @@ sup {
   width: max-content;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  z-index: 10001;
+  transition: opacity 0.15s;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   text-align: left;
+  z-index: 10001;
 }
 
 .annotation-ref::before {
@@ -382,119 +372,72 @@ sup {
   left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top-color: rgba(20,20,20,0.95);
+  border-top-color: rgba(20, 20, 20, 0.95);
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s;
   z-index: 10001;
 }
 
 .annotation-ref:hover::after,
-.annotation-ref:hover::before {
-  opacity: 1;
-}
+.annotation-ref:hover::before { opacity: 1; }
 
-/* =============================================
-   SIDEBAR OVERLAY
-   ============================================= */
+/* ============================================================
+   9. SIDEBAR
+   ============================================================ */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   z-index: 9997;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s;
 }
+.sidebar-overlay.visible { opacity: 1; pointer-events: auto; }
 
-.sidebar-overlay.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* =============================================
-   SIDEBAR TOGGLE BUTTON
-   ============================================= */
-.sidebar-toggle {
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  z-index: 9998;
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 8px;
-  color: #fff;
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, opacity 0.3s;
-  opacity: 0.35;
-  user-select: none;
-  line-height: 1;
-}
-
-.sidebar-toggle:hover {
-  opacity: 1;
-  background: rgba(0,0,0,0.85);
-}
-
-/* =============================================
-   SIDEBAR
-   ============================================= */
 .reader-sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  width: 320px;
+  width: 340px;
   height: 100vh;
   height: 100dvh;
   z-index: 9999;
-  background: rgba(25,25,25,0.97);
-  backdrop-filter: blur(16px);
+  background: rgba(25, 25, 25, 0.97);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   color: #e0e0e0;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--ui-font);
   transform: translateX(-100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
-
-.reader-sidebar.open {
-  transform: translateX(0);
-}
+.reader-sidebar.open { transform: translateX(0); }
 
 .sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 16px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
 }
-
 .sidebar-header h3 {
   font-size: 15px;
   font-weight: 600;
   color: #fff;
   margin: 0;
-  font-family: inherit;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-
 .sidebar-close {
   width: 28px;
   height: 28px;
   border: none;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   color: #aaa;
   font-size: 16px;
@@ -502,70 +445,42 @@ sup {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
   line-height: 1;
+  transition: background 0.15s, color 0.15s;
 }
+.sidebar-close:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
 
-.sidebar-close:hover {
-  background: rgba(255,255,255,0.15);
-  color: #fff;
-}
+.sidebar-body { flex: 1; overflow-y: auto; padding: 12px 16px 20px; }
+.sidebar-body::-webkit-scrollbar { width: 8px; }
+.sidebar-body::-webkit-scrollbar-track { background: transparent; }
+.sidebar-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
 
-.sidebar-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px 16px 20px;
-}
-
-.sidebar-body::-webkit-scrollbar {
-  width: 4px;
-}
-
-.sidebar-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar-body::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-  border-radius: 4px;
-}
-
-.sidebar-section {
-  margin-bottom: 20px;
-}
-
+.sidebar-section { margin-bottom: 20px; }
 .sidebar-section-title {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 8px;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
-
-.sidebar-empty {
-  font-size: 13px;
-  color: rgba(255,255,255,0.3);
-  text-align: center;
-  padding: 16px 0;
-}
+.sidebar-empty { font-size: 13px; color: rgba(255, 255, 255, 0.3); text-align: center; padding: 16px 0; }
 
 .sidebar-item {
-  padding: 8px 10px;
+  padding: 8px 12px;
   padding-right: 32px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s;
   margin-bottom: 4px;
   border-left: 3px solid transparent;
   position: relative;
+  transition: background 0.15s;
+  display: flex;
 }
-
-.sidebar-item:hover {
-  background: rgba(255,255,255,0.06);
-}
+.sidebar-item:hover { background: rgba(255, 255, 255, 0.06); }
+.sidebar-item.is-orphan { opacity: 0.5; border-left-color: #666 !important; }
 
 .sidebar-delete-btn {
   position: absolute;
@@ -575,29 +490,24 @@ sup {
   width: 20px;
   height: 20px;
   border: none;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
   opacity: 0;
-  transition: all 0.15s;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
 }
+.sidebar-item:hover .sidebar-delete-btn { opacity: 1; }
+.sidebar-delete-btn:hover { background: rgba(255, 70, 70, 0.25); color: #ff6b6b; }
 
-.sidebar-item:hover .sidebar-delete-btn {
-  opacity: 1;
-}
-
-.sidebar-delete-btn:hover {
-  background: rgba(255,70,70,0.25);
-  color: #ff6b6b;
-}
-
+.sidebar-main { flex: 1; cursor: pointer; min-width: 0; }
+.sidebar-ref-badge { display: inline-block; font-size: 10px; font-weight: 600; color: var(--link); margin-right: 4px; }
 .sidebar-highlight-text {
   font-size: 13px;
   line-height: 1.5;
@@ -608,79 +518,57 @@ sup {
   overflow: hidden;
   word-break: break-word;
 }
+.sidebar-note-preview { font-size: 12px; color: rgba(255, 255, 255, 0.45); margin-top: 2px; font-style: italic; }
+.sidebar-orphan-tag { font-size: 10px; color: #ff9b6b; margin-top: 4px; }
 
-.sidebar-note-preview {
-  font-size: 12px;
-  color: rgba(255,255,255,0.45);
-  margin-top: 2px;
-  font-style: italic;
-}
-
-.sidebar-ref-badge {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--link);
-  margin-right: 4px;
-}
-
-.sidebar-footer {
-  padding: 12px 16px 16px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  flex-shrink: 0;
-}
-
+.sidebar-footer { padding: 12px 16px 16px; border-top: 1px solid rgba(255, 255, 255, 0.08); flex-shrink: 0; }
 .sidebar-export-btn {
   width: 100%;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
   color: #ddd;
   font-size: 13px;
   font-weight: 500;
   padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s;
   font-family: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.sidebar-export-btn:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.25); color: #fff; }
+
+/* ============================================================
+   10. RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+  .reader-sidebar { width: 100vw; }
+  #book-reader-controls { padding: 6px 8px; gap: 4px; }
 }
 
-.sidebar-export-btn:hover {
-  background: rgba(255,255,255,0.12);
-  border-color: rgba(255,255,255,0.25);
-  color: #fff;
-}
-
-/* =============================================
-   PRINT
-   ============================================= */
+/* ============================================================
+   11. IMPRESIÓN
+   ============================================================ */
 @media print {
-  body {
-    font-size: 12pt;
-    max-width: none;
-    padding: 0;
-    color: #000;
-    background: #fff;
-  }
-
+  body { font-size: 12pt; max-width: none; padding: 0; color: #000; background: #fff; }
   #book-reader-controls,
   .selection-popup,
   .reader-sidebar,
   .sidebar-overlay,
-  .sidebar-toggle {
-    display: none !important;
-  }
-
-  .hl-yellow,
-  .hl-green,
-  .hl-blue,
-  .hl-pink,
-  .hl-orange,
-  .hl-purple {
-    background: none !important;
-    border-bottom: 2px solid #999;
-  }
+  .sidebar-toggle { display: none !important; }
+  .hl { background: none !important; border-bottom: 2px solid #999; }
+  .annotation-ref::after, .annotation-ref::before { display: none; }
 }
+
+/* ============================================================
+   12. MOVIMIENTO REDUCIDO
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+
+
+
